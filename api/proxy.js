@@ -17,7 +17,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", async (req, res) => {
-  const targetUrl = req.query.url;
+  const targetUrl = req.params.target;
 
   if (/ads\.|popup|doubleclick|tracking/.test(targetUrl)) {
     return res.status(204).end();
