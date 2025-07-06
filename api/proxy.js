@@ -16,8 +16,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/:target", async (req, res) => {
-  const targetUrl = req.params.target;
+app.get("/read", async (req, res) => {
+  const targetUrl = req.query.url;
 
   if (/ads\.|popup|doubleclick|tracking/.test(targetUrl)) {
     return res.status(204).end();
@@ -80,7 +80,7 @@ app.get("/:target", async (req, res) => {
         newUrl = href;
       }
 
-      $el.attr("href", `/${encodeURIComponent(newUrl)}`);
+      $el.attr("href", `/read?url=${encodeURIComponent(newUrl)}`);
     });
 
     const cleaned = $.html();
