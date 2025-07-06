@@ -5,6 +5,7 @@ import NodeCache from "node-cache";
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 300 });
+const PORT = process.env.PORT || 3000;
 
 app.use((req, res, next) => {
   res.setHeader("X-Proxy-By", "MangaProxy");
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
 app.get("/:target", async (req, res) => {
   const targetUrl = req.params.target;
 
+  // Bloqueia apenas recursos suspeitos
   if (/ads\.|popup|doubleclick|tracking/.test(targetUrl)) {
     return res.status(204).end();
   }
@@ -35,16 +37,19 @@ app.get("/:target", async (req, res) => {
 
     const contentType = response.headers.get("content-type");
 
-    if (!contentType || !contentType.includes("text/html")) {
-      const buffer = await response.arrayBuffer();
-      res.setHeader("Content-Type", contentType || "application/octet-stream");
-      return res.send(Buffer.from(buffer));
+    // Se for imagem, css, etc, apenas retorna
+    if (!contentType?.includes("text/html")) {
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      res.setHeader("Content-Type", contentType);
+      return res.send(buffer);
     }
 
     const html = await response.text();
     const $ = load(html);
     const baseUrl = new URL(targetUrl).origin;
 
+    // Remove scripts que abrem nova aba ou têm nomes suspeitos
     $("script").each((_, el) => {
       const scriptContent = $(el).html();
       if (
@@ -56,12 +61,14 @@ app.get("/:target", async (req, res) => {
       }
     });
 
+    // Remove elementos de propaganda
     $(
       ".ads, .popup, .sponsored, .banner, [id*='ads'], [class*='ads']"
     ).remove();
     $("[onclick]").removeAttr("onclick");
     $("[target='_blank']").removeAttr("target");
 
+    // REESCREVE APENAS LINKS CLIQUEÁVEIS (<a>)
     $("a[href]").each((_, el) => {
       const $el = $(el);
       const href = $el.attr("href");
@@ -92,4 +99,6 @@ app.get("/:target", async (req, res) => {
   }
 });
 
-export default app;
+app.listen(PORT, () => {
+  console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
+});
