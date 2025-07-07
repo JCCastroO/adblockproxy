@@ -8,7 +8,7 @@ const cache = new NodeCache({ stdTTL: 300 });
 const PORT = process.env.PORT || 3000;
 
 app.use((req, res, next) => {
-  res.setHeader("X-Proxy-By", "MangaProxy");
+  res.setHeader("X-Proxy-By", "AdBlockProxy");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader(
     "Content-Security-Policy",
@@ -17,8 +17,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/:target", async (req, res) => {
-  const targetUrl = req.params.target;
+app.get("/proxy", async (req, res) => {
+  const targetUrl = req.query.url;
 
   // Bloqueia apenas recursos suspeitos
   if (/ads\.|popup|doubleclick|tracking/.test(targetUrl)) {
@@ -87,7 +87,7 @@ app.get("/:target", async (req, res) => {
         newUrl = href;
       }
 
-      $el.attr("href", `/${encodeURIComponent(newUrl)}`);
+      $el.attr("href", `/proxy?url=${encodeURIComponent(newUrl)}`);
     });
 
     const cleaned = $.html();
